@@ -5,7 +5,7 @@ import {
   scoreDeltaForAnswer,
   type Answer,
   type PlaceDecisionMaterial,
-} from './scoring/decisionMaterial'
+} from './scoring/decisionMaterial.ts'
 
 export type { Answer }
 export { scoreDeltaForAnswer }

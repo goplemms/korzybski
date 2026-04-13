@@ -2,6 +2,8 @@
 
 Svelte 5 + Vite 8 + TypeScript. Local-first shell: yes / no / skip drives **decision material** per place (`src/scoring/decisionMaterial.ts`) — net **score**, **lastInteractedAt** (recency), and **answerCounts** (yes/no/skip tags). Ranking uses score, then recency, then name; tune weights or add decay in that module.
 
+**Future algorithm data model** (`src/scoring/discoveryModel.ts`): append-only **DiscoveryEvent** (place snapshot, answer, time, carousel index, **listSource**, optional **searchRadiusMeters**, **weekdayContext**), **DiscoverySession** (anonymous `sessionId` / optional `clientId`), **PlaceExposureAggregate** (fairness / CTR-style metrics), and **BaseDistancePreference** — separate **weekday** vs **weekend** “comfort” radii (meters) for nearby search, with `comfortRadiusMeters()` and `DEFAULT_BASE_DISTANCE`. Not wired to UI or persistence yet.
+
 ## Nearby restaurants (Google Places)
 
 The browser never sees your Google API key. A tiny Node proxy (`server/placesProxy.ts`) calls [Places API (New) Nearby Search](https://developers.google.com/maps/documentation/places/web-service/nearby-search) with a **minimal field mask** (`places.id`, `places.displayName`) so requests stay on the **Nearby Search Pro** SKU tier rather than Enterprise fields.
@@ -25,7 +27,7 @@ We use Serwist instead of `vite-plugin-pwa` so **npm can resolve cleanly on Vite
 - `npm run build` — production build (client + service worker)
 - `npm run preview` — preview the build (use this to verify install / SW)
 - `npm run server` — Places API proxy on port `8787` (or `PORT`)
-- `npm run test` — Node test runner: Places proxy (mocked `fetch`) plus client POI session / Maps URL helpers in `src/poiSession.test.ts`
+- `npm run test` — Node test runner: Places proxy, `src/scoring/*.test.ts`, `src/poiSession.test.ts`
 - `npm run check` — `svelte-check`, Vite config TS, service worker TS, and server TS
 
 ## Dependency bumps
