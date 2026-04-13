@@ -1,6 +1,6 @@
 # Restaurant Randomizer (PWA)
 
-Svelte 5 + Vite 8 + TypeScript. Local-first shell: yes / no / skip adjusts placeholder scores; swap in your ranking algorithm when ready.
+Svelte 5 + Vite 8 + TypeScript. Local-first shell: yes / no / skip drives **decision material** per place (`src/scoring/decisionMaterial.ts`) — net **score**, **lastInteractedAt** (recency), and **answerCounts** (yes/no/skip tags). Ranking uses score, then recency, then name; tune weights or add decay in that module.
 
 ## Nearby restaurants (Google Places)
 

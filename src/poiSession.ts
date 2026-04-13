@@ -1,6 +1,20 @@
-export type Answer = 'yes' | 'no' | 'skip'
+import {
+  applyAnswerToMaterial,
+  comparePlacesForRanking,
+  emptyDecisionMaterial,
+  scoreDeltaForAnswer,
+  type Answer,
+  type PlaceDecisionMaterial,
+} from './scoring/decisionMaterial'
 
-export type Poi = { id: string; name: string; score: number; mapsUrl?: string }
+export type { Answer }
+export { scoreDeltaForAnswer }
+
+export type Poi = {
+  id: string
+  name: string
+  mapsUrl?: string
+} & PlaceDecisionMaterial
 
 export type PoiSessionSnapshot = {
   pois: Poi[]
@@ -25,14 +39,13 @@ export function mapsLinkForPlace(poi: Poi): string | undefined {
   return undefined
 }
 
-export function scoreDeltaForAnswer(answer: Answer): number {
-  if (answer === 'yes') return 1
-  if (answer === 'no') return -1
-  return 0
+export function rankedPois(pois: Poi[]): Poi[] {
+  return [...pois].sort(comparePlacesForRanking)
 }
 
-export function rankedPois(pois: Poi[]): Poi[] {
-  return [...pois].sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
+export type ApplyPoiAnswerOptions = {
+  /** Wall clock for recency (defaults to `Date.now()`). */
+  nowMs?: number
 }
 
 /**
@@ -41,14 +54,34 @@ export function rankedPois(pois: Poi[]): Poi[] {
 export function applyPoiAnswer(
   snapshot: PoiSessionSnapshot,
   answer: Answer,
+  options?: ApplyPoiAnswerOptions,
 ): PoiSessionSnapshot | null {
   const { pois, currentIndex } = snapshot
   if (pois.length === 0) return null
   const current = pois[currentIndex]
   if (!current) return null
 
-  const delta = scoreDeltaForAnswer(answer)
-  const nextPois = pois.map((p) => (p.id === current.id ? { ...p, score: p.score + delta } : p))
+  const nowMs = options?.nowMs ?? Date.now()
+  const material = applyAnswerToMaterial(
+    {
+      score: current.score,
+      lastInteractedAt: current.lastInteractedAt,
+      answerCounts: current.answerCounts,
+    },
+    answer,
+    nowMs,
+  )
+
+  const nextPois = pois.map((p) =>
+    p.id === current.id
+      ? {
+          ...p,
+          score: material.score,
+          lastInteractedAt: material.lastInteractedAt,
+          answerCounts: material.answerCounts,
+        }
+      : p,
+  )
 
   const yesMapsUrl = answer === 'yes' ? mapsLinkForPlace(current) ?? null : null
 
@@ -57,5 +90,15 @@ export function applyPoiAnswer(
     currentIndex: (currentIndex + 1) % pois.length,
     lastAnswer: answer,
     yesMapsUrl,
+  }
+}
+
+/** Build a POI with default decision material (demo / fresh loads). */
+export function createPoi(id: string, name: string, extra?: { mapsUrl?: string }): Poi {
+  return {
+    ...emptyDecisionMaterial(),
+    id,
+    name,
+    ...(extra?.mapsUrl !== undefined ? { mapsUrl: extra.mapsUrl } : {}),
   }
 }

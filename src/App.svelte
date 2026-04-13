@@ -1,6 +1,7 @@
 <script lang="ts">
   import {
     applyPoiAnswer,
+    createPoi,
     mapsLinkForPlace,
     rankedPois,
     type Answer,
@@ -8,9 +9,9 @@
   } from './poiSession'
 
   const demoPois: Poi[] = [
-    { id: '1', name: 'Neon Noodle', score: 0 },
-    { id: '2', name: 'Harbor Tacos', score: 0 },
-    { id: '3', name: 'Maple & Rye', score: 0 },
+    createPoi('1', 'Neon Noodle'),
+    createPoi('2', 'Harbor Tacos'),
+    createPoi('3', 'Maple & Rye'),
   ]
 
   let restaurants: Poi[] = $state([...demoPois])
@@ -87,12 +88,7 @@
         placesError = 'No restaurants returned for this area. Try again elsewhere or use demo data.'
         return
       }
-      restaurants = list.map((p) => ({
-        id: p.id,
-        name: p.name,
-        score: 0,
-        mapsUrl: p.mapsUrl,
-      }))
+      restaurants = list.map((p) => createPoi(p.id, p.name, { mapsUrl: p.mapsUrl }))
       currentIndex = 0
       lastAnswer = null
       yesMapsUrl = null
@@ -160,6 +156,7 @@
     <ol class="rank-list">
       {#each ranked as r, i (r.id)}
         {@const rankLink = mapsLinkForPlace(r)}
+        {@const c = r.answerCounts}
         <li>
           <span class="rank">{i + 1}.</span>
           <span class="name">
@@ -170,6 +167,9 @@
             {/if}
           </span>
           <span class="score">{r.score}</span>
+          <span class="tag-hint" aria-label="Choice counts for this place">
+            Y {c.yes} · N {c.no} · S {c.skip}
+          </span>
         </li>
       {/each}
     </ol>
@@ -367,11 +367,21 @@
   .rank-list li {
     display: grid;
     grid-template-columns: 2rem 1fr auto;
-    gap: 0.5rem;
+    grid-template-rows: auto auto;
+    gap: 0.15rem 0.5rem;
     align-items: baseline;
     padding: 0.45rem 0;
     border-bottom: 1px solid var(--border);
     font-size: 0.95rem;
+  }
+
+  .tag-hint {
+    grid-row: 2;
+    grid-column: 2 / -1;
+    font-size: 0.72rem;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
   }
 
   .rank-list li:last-child {
