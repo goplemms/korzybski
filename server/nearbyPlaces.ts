@@ -6,6 +6,17 @@ export const PLACES_URL = 'https://places.googleapis.com/v1/places:searchNearby'
 /** Pro-tier fields only; avoids Enterprise SKUs (rating, hours, etc.). */
 export const PLACES_FIELD_MASK = 'places.id,places.displayName,places.googleMapsUri'
 
+const DEFAULT_RADIUS_M = 1200
+const MIN_RADIUS_M = 100
+const MAX_RADIUS_M = 50_000
+const DEFAULT_MAX_RESULTS = 20
+const MIN_MAX_RESULTS = 1
+const MAX_MAX_RESULTS = 20
+
+function clampRounded(n: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, Math.round(n)))
+}
+
 export type NearbyBody = {
   latitude?: unknown
   longitude?: unknown
@@ -39,12 +50,15 @@ export async function nearbyPlacesResult(
     return { status: 400, body: { error: 'latitude or longitude out of range' } }
   }
 
-  let radius = typeof body.radiusMeters === 'number' && Number.isFinite(body.radiusMeters) ? body.radiusMeters : 1200
-  radius = Math.min(50_000, Math.max(100, Math.round(radius)))
+  const rawRadius =
+    typeof body.radiusMeters === 'number' && Number.isFinite(body.radiusMeters) ? body.radiusMeters : DEFAULT_RADIUS_M
+  const radius = clampRounded(rawRadius, MIN_RADIUS_M, MAX_RADIUS_M)
 
-  let maxResultCount =
-    typeof body.maxResultCount === 'number' && Number.isFinite(body.maxResultCount) ? body.maxResultCount : 20
-  maxResultCount = Math.min(20, Math.max(1, Math.round(maxResultCount)))
+  const rawMax =
+    typeof body.maxResultCount === 'number' && Number.isFinite(body.maxResultCount)
+      ? body.maxResultCount
+      : DEFAULT_MAX_RESULTS
+  const maxResultCount = clampRounded(rawMax, MIN_MAX_RESULTS, MAX_MAX_RESULTS)
 
   const upstream = await fetchFn(PLACES_URL, {
     method: 'POST',

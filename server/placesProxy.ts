@@ -3,6 +3,7 @@
  * Keeps the API key off the client. Run alongside Vite (see README).
  */
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
+import { text } from 'node:stream/consumers'
 
 import { nearbyPlacesResult, type NearbyBody } from './nearbyPlaces.ts'
 
@@ -25,19 +26,10 @@ function json(res: ServerResponse, status: number, body: unknown) {
   res.end(JSON.stringify(body))
 }
 
-function readBody(req: IncomingMessage): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = []
-    req.on('data', (c) => chunks.push(c as Buffer))
-    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
-    req.on('error', reject)
-  })
-}
-
 async function handleNearby(req: IncomingMessage, res: ServerResponse) {
   let raw: string
   try {
-    raw = await readBody(req)
+    raw = await text(req)
   } catch {
     json(res, 400, { error: 'Could not read request body' })
     return
