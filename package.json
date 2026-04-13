@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "server": "node --experimental-strip-types server/placesProxy.ts",
+    "test": "node --experimental-strip-types --test server/*.test.ts",
     "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json && tsc -p tsconfig.sw.json && tsc -p tsconfig.server.json"
   },
   "devDependencies": {
