@@ -25,7 +25,7 @@ We use Serwist instead of `vite-plugin-pwa` so **npm can resolve cleanly on Vite
 - `npm run build` — production build (client + service worker)
 - `npm run preview` — preview the build (use this to verify install / SW)
 - `npm run server` — Places API proxy on port `8787` (or `PORT`)
-- `npm run test` — Node test runner for the Places proxy logic (mocked `fetch`; no API key)
+- `npm run test` — Node test runner: Places proxy (mocked `fetch`) plus client POI session / Maps URL helpers in `src/poiSession.test.ts`
 - `npm run check` — `svelte-check`, Vite config TS, service worker TS, and server TS
 
 ## Dependency bumps

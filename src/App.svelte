@@ -1,44 +1,48 @@
 <script lang="ts">
-  type Answer = 'yes' | 'no' | 'skip'
+  import {
+    applyPoiAnswer,
+    mapsLinkForPlace,
+    rankedPois,
+    type Answer,
+    type Poi,
+  } from './poiSession'
 
-  type Restaurant = { id: string; name: string; score: number; mapsUrl?: string }
-
-  const demoRestaurants: Restaurant[] = [
+  const demoPois: Poi[] = [
     { id: '1', name: 'Neon Noodle', score: 0 },
     { id: '2', name: 'Harbor Tacos', score: 0 },
     { id: '3', name: 'Maple & Rye', score: 0 },
   ]
 
-  let restaurants: Restaurant[] = $state([...demoRestaurants])
+  let restaurants: Poi[] = $state([...demoPois])
 
   let currentIndex = $state(0)
   let lastAnswer = $state<Answer | null>(null)
+  let yesMapsUrl = $state<string | null>(null)
   let placesLoading = $state(false)
   let placesError = $state<string | null>(null)
 
   const current = $derived(restaurants[currentIndex] ?? null)
 
   function record(answer: Answer) {
-    if (!current) return
-    lastAnswer = answer
-    const i = restaurants.findIndex((r) => r.id === current.id)
-    if (i < 0) return
-    const delta = answer === 'yes' ? 1 : answer === 'no' ? -1 : 0
-    restaurants = restaurants.map((r, j) =>
-      j === i ? { ...r, score: r.score + delta } : r,
+    const next = applyPoiAnswer(
+      { pois: restaurants, currentIndex, lastAnswer, yesMapsUrl },
+      answer,
     )
-    currentIndex = (currentIndex + 1) % restaurants.length
+    if (!next) return
+    restaurants = next.pois
+    currentIndex = next.currentIndex
+    lastAnswer = next.lastAnswer
+    yesMapsUrl = next.yesMapsUrl
   }
 
-  const ranked = $derived(
-    [...restaurants].sort((a, b) => b.score - a.score || a.name.localeCompare(b.name)),
-  )
+  const ranked = $derived(rankedPois(restaurants))
 
   function restoreDemo() {
     placesError = null
-    restaurants = demoRestaurants.map((r) => ({ ...r }))
+    restaurants = demoPois.map((r) => ({ ...r }))
     currentIndex = 0
     lastAnswer = null
+    yesMapsUrl = null
   }
 
   async function loadNearby() {
@@ -91,6 +95,7 @@
       }))
       currentIndex = 0
       lastAnswer = null
+      yesMapsUrl = null
     } catch (e) {
       const msg = e instanceof GeolocationPositionError
         ? e.code === 1
@@ -131,9 +136,10 @@
     <h2 id="choice-heading">Tonight?</h2>
     {#if current}
       <p class="place-name">{current.name}</p>
-      {#if current.mapsUrl}
-        <p class="maps-link">
-          <a href={current.mapsUrl} target="_blank" rel="noopener noreferrer">Open in Google Maps</a>
+      {#if yesMapsUrl}
+        <p class="maps-link yes-maps">
+          <a href={yesMapsUrl} target="_blank" rel="noopener noreferrer">Open in Google Maps</a>
+          <span class="maps-caption">for the place you said yes to</span>
         </p>
       {/if}
       <div class="actions">
@@ -153,11 +159,12 @@
     <h2 id="rank-heading">Ranking</h2>
     <ol class="rank-list">
       {#each ranked as r, i (r.id)}
+        {@const rankLink = mapsLinkForPlace(r)}
         <li>
           <span class="rank">{i + 1}.</span>
           <span class="name">
-            {#if r.mapsUrl}
-              <a href={r.mapsUrl} target="_blank" rel="noopener noreferrer">{r.name}</a>
+            {#if rankLink}
+              <a href={rankLink} target="_blank" rel="noopener noreferrer">{r.name}</a>
             {:else}
               {r.name}
             {/if}
@@ -247,6 +254,18 @@
   .maps-link {
     margin: 0 0 1.1rem;
     font-size: 0.88rem;
+  }
+
+  .maps-link.yes-maps {
+    margin-top: 0.25rem;
+  }
+
+  .maps-caption {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-weight: 400;
   }
 
   .maps-link a {
