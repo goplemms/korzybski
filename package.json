@@ -10,7 +10,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json && tsc -p tsconfig.sw.json"
+    "server": "node --experimental-strip-types server/placesProxy.ts",
+    "test": "node --experimental-strip-types --test \"server/*.test.ts\" \"src/**/*.test.ts\"",
+    "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json && tsc -p tsconfig.sw.json && tsc -p tsconfig.server.json"
   },
   "devDependencies": {
     "@serwist/vite": "^9.5.7",
